@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Life Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#faf8f5;
+  --surface:#ffffff;
+  --surface2:#f3f0eb;
+  --border:#e8e3da;
+  --text:#1a1714;
+  --muted:#8a8278;
+  --accent:#c8873a;
+  --accent2:#3a7cc8;
+  --accent3:#3ac87c;
+  --accent4:#c83a6e;
+  --accent5:#7c3ac8;
+  --danger:#e05252;
+  --ff-display:'DM Serif Display',serif;
+  --ff-body:'DM Sans',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--ff-body);min-height:100vh;font-size:15px}
+h1,h2,h3{font-family:var(--ff-display);font-weight:400}
+input,select,textarea{font-family:var(--ff-body)}
+
+/* LAYOUT */
+.app{max-width:1100px;margin:0 auto;padding:2rem 1.5rem 4rem}
+header{text-align:center;padding:2.5rem 0 2rem;border-bottom:1px solid var(--border);margin-bottom:2.5rem}
+header h1{font-size:clamp(32px,5vw,52px);color:var(--text);letter-spacing:-0.02em;line-height:1.1}
+header h1 em{font-style:italic;color:var(--accent)}
+header p{color:var(--muted);margin-top:0.5rem;font-size:14px;letter-spacing:0.03em}
+.month-nav{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:2.5rem}
+.month-nav button{background:var(--surface);border:1px solid var(--border);border-radius:8px;width:36px;height:36px;cursor:pointer;font-size:18px;color:var(--text);transition:all 0.15s}
+.month-nav button:hover{background:var(--surface2);border-color:var(--accent)}
+.month-label{font-family:var(--ff-display);font-size:24px;min-width:220px;text-align:center}
+
+/* SUMMARY CARDS */
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2.5rem}
+.sum-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;position:relative;overflow:hidden}
+.sum-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.sum-card.total::after{background:var(--accent)}
+.sum-card.housing::after{background:var(--accent2)}
+.sum-card.wellness::after{background:var(--accent3)}
+.sum-card.beauty::after{background:var(--accent4)}
+.sum-card.other::after{background:var(--accent5)}
+.sum-label{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.sum-value{font-family:var(--ff-display);font-size:28px;color:var(--text)}
+.sum-value.over{color:var(--danger)}
+.sum-budget{font-size:12px;color:var(--muted);margin-top:4px}
+.progress-bar{height:4px;background:var(--border);border-radius:100px;margin-top:10px;overflow:hidden}
+.progress-fill{height:100%;border-radius:100px;transition:width 0.4s ease}
+.housing .progress-fill{background:var(--accent2)}
+.wellness .progress-fill{background:var(--accent3)}
+.beauty .progress-fill{background:var(--accent4)}
+.other .progress-fill{background:var(--accent5)}
+.total .progress-fill{background:var(--accent)}
+
+/* SECTIONS */
+.sections{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+@media(max-width:720px){.sections{grid-template-columns:1fr}}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.section-head{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.section-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.icon-housing{background:#e8f2ff}
+.icon-fitness{background:#e8fff3}
+.icon-skin{background:#ffe8f2}
+.icon-sleep{background:#f2e8ff}
+.icon-other{background:#fff5e8}
+.section-head h2{font-size:18px;flex:1}
+.section-total{font-family:var(--ff-display);font-size:20px;margin-left:auto}
+.section-body{padding:1.25rem 1.5rem}
+.entry-row{display:grid;grid-template-columns:1fr 110px 36px;gap:8px;align-items:center;margin-bottom:8px}
+.entry-row input[type=text]{width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:14px;color:var(--text);transition:border-color 0.15s}
+.entry-row input[type=text]:focus{outline:none;border-color:var(--accent)}
+.entry-row input[type=number]{width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:14px;color:var(--text);text-align:right;transition:border-color 0.15s}
+.entry-row input[type=number]:focus{outline:none;border-color:var(--accent)}
+.del-btn{width:32px;height:32px;background:transparent;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;color:var(--muted);transition:all 0.15s;display:flex;align-items:center;justify-content:center}
+.del-btn:hover{background:#fff0f0;border-color:#ffcccc;color:var(--danger)}
+.add-btn{width:100%;margin-top:4px;padding:8px;background:transparent;border:1px dashed var(--border);border-radius:8px;cursor:pointer;font-size:13px;color:var(--muted);transition:all 0.2s;font-family:var(--ff-body)}
+.add-btn:hover{background:var(--surface2);border-color:var(--accent);color:var(--accent)}
+
+/* SLEEP & SKIN SCHEDULE */
+.schedule-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.schedule-item{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.schedule-item label{font-size:11px;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;display:block;margin-bottom:5px}
+.schedule-item input[type=time],.schedule-item input[type=number],.schedule-item select{width:100%;background:transparent;border:none;font-size:15px;font-family:var(--ff-body);color:var(--text);padding:0}
+.schedule-item input:focus,.schedule-item select:focus{outline:none}
+.checklist{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.check-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.15s}
+.check-row:hover{border-color:var(--accent);background:var(--surface2)}
+.check-row input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;flex-shrink:0}
+.check-row span{font-size:13px;flex:1}
+.check-row.checked span{text-decoration:line-through;color:var(--muted)}
+
+/* NOTES */
+.notes-area{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:var(--ff-body);color:var(--text);resize:vertical;min-height:80px;transition:border-color 0.15s}
+.notes-area:focus{outline:none;border-color:var(--accent)}
+
+/* ACTIONS */
+.actions{display:flex;gap:1rem;justify-content:center;margin-top:2.5rem;flex-wrap:wrap}
+.action-btn{padding:12px 28px;border-radius:10px;font-family:var(--ff-body);font-size:14px;font-weight:500;cursor:pointer;transition:all 0.2s;letter-spacing:0.02em;border:none}
+.btn-save{background:var(--text);color:var(--bg)}
+.btn-save:hover{background:#3a3530;transform:translateY(-1px)}
+.btn-export{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.btn-export:hover{background:var(--surface2);border-color:var(--accent);transform:translateY(-1px)}
+.btn-clear{background:transparent;color:var(--danger);border:1px solid #ffcccc}
+.btn-clear:hover{background:#fff5f5}
+
+/* HISTORY */
+.history-section{margin-top:2.5rem;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.history-head{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.history-head h2{font-size:20px}
+.history-body{padding:1.25rem 1.5rem}
+.history-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all 0.15s}
+.history-item:hover{border-color:var(--accent);background:var(--surface2)}
+.history-month{font-weight:500;font-size:14px}
+.history-amount{font-family:var(--ff-display);font-size:18px;color:var(--accent)}
+.history-empty{text-align:center;color:var(--muted);font-size:14px;padding:1.5rem 0}
+
+/* TOAST */
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(100px);background:var(--text);color:var(--bg);padding:12px 24px;border-radius:10px;font-size:14px;z-index:999;transition:transform 0.3s ease;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* CURRENCY tag */
+.currency-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem}
+.currency-row label{font-size:13px;color:var(--muted)}
+.currency-row select{padding:5px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:14px;color:var(--text);cursor:pointer}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>My <em>Monthly</em> Life Tracker</h1>
+    <p>Track expenses · wellness · skincare · sleep — every month, beautifully.</p>
+  </header>
+
+  <div class="month-nav">
+    <button onclick="changeMonth(-1)">‹</button>
+    <div class="month-label" id="monthLabel"></div>
+    <button onclick="changeMonth(1)">›</button>
+  </div>
+
+  <div class="currency-row">
+    <label>Currency:</label>
+    <select id="currencySelect" onchange="saveAndRender()">
+      <option value="₹">₹ INR</option>
+      <option value="$">$ USD</option>
+      <option value="€">€ EUR</option>
+      <option value="£">£ GBP</option>
+    </select>
+    <label style="margin-left:1rem">Monthly Budget:</label>
+    <input type="number" id="totalBudget" placeholder="50000" style="width:110px;padding:5px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:14px" oninput="saveAndRender()">
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary">
+    <div class="sum-card total">
+      <div class="sum-label">Total Spent</div>
+      <div class="sum-value" id="sumTotal">₹0</div>
+      <div class="sum-budget" id="sumBudgetLeft">Budget: —</div>
+      <div class="progress-bar"><div class="progress-fill" id="progTotal" style="width:0%;background:var(--accent)"></div></div>
+    </div>
+    <div class="sum-card housing">
+      <div class="sum-label">Housing</div>
+      <div class="sum-value" id="sumHousing">₹0</div>
+      <div class="progress-bar"><div class="progress-fill" id="progHousing" style="width:0%"></div></div>
+    </div>
+    <div class="sum-card wellness">
+      <div class="sum-label">Fitness</div>
+      <div class="sum-value" id="sumFitness">₹0</div>
+      <div class="progress-bar"><div class="progress-fill" id="progFitness" style="width:0%"></div></div>
+    </div>
+    <div class="sum-card beauty">
+      <div class="sum-label">Skincare</div>
+      <div class="sum-value" id="sumSkin">₹0</div>
+      <div class="progress-bar"><div class="progress-fill" id="progSkin" style="width:0%"></div></div>
+    </div>
+    <div class="sum-card other">
+      <div class="sum-label">Other</div>
+      <div class="sum-value" id="sumOther">₹0</div>
+      <div class="progress-bar"><div class="progress-fill" id="progOther" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- MAIN SECTIONS -->
+  <div class="sections">
+
+    <!-- HOUSING -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon icon-housing">🏠</div>
+        <h2>Housing & Bills</h2>
+        <span class="section-total" id="totalHousing">₹0</span>
+      </div>
+      <div class="section-body">
+        <div id="housingEntries"></div>
+        <button class="add-btn" onclick="addEntry('housing')">+ Add item</button>
+        <div style="margin-top:1rem">
+          <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px">Notes</label>
+          <textarea class="notes-area" id="notesHousing" placeholder="Landlord contact, due dates..." oninput="saveAndRender()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- FITNESS -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon icon-fitness">💪</div>
+        <h2>Gym & Fitness</h2>
+        <span class="section-total" id="totalFitness">₹0</span>
+      </div>
+      <div class="section-body">
+        <div id="fitnessEntries"></div>
+        <button class="add-btn" onclick="addEntry('fitness')">+ Add item</button>
+        <div style="margin-top:1rem">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;letter-spacing:0.04em;text-transform:uppercase">Weekly Workout Plan</div>
+          <div class="checklist" id="workoutChecklist"></div>
+          <button class="add-btn" onclick="addWorkoutDay()">+ Add workout</button>
+        </div>
+        <div style="margin-top:1rem">
+          <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px">Notes</label>
+          <textarea class="notes-area" id="notesFitness" placeholder="Goals, trainer, progress..." oninput="saveAndRender()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- SKINCARE -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon icon-skin">✨</div>
+        <h2>Skincare & Beauty</h2>
+        <span class="section-total" id="totalSkin">₹0</span>
+      </div>
+      <div class="section-body">
+        <div id="skinEntries"></div>
+        <button class="add-btn" onclick="addEntry('skin')">+ Add item</button>
+        <div style="margin-top:1rem">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;letter-spacing:0.04em;text-transform:uppercase">Morning Routine</div>
+          <div class="checklist" id="morningRoutine"></div>
+          <button class="add-btn" onclick="addRoutineStep('morning')">+ Add step</button>
+          <div style="font-size:12px;color:var(--muted);margin:12px 0 8px;letter-spacing:0.04em;text-transform:uppercase">Evening Routine</div>
+          <div class="checklist" id="eveningRoutine"></div>
+          <button class="add-btn" onclick="addRoutineStep('evening')">+ Add step</button>
+        </div>
+        <div style="margin-top:1rem">
+          <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px">Skin Notes</label>
+          <textarea class="notes-area" id="notesSkin" placeholder="Skin concerns, reactions, what worked..." oninput="saveAndRender()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLEEP -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon icon-sleep">🌙</div>
+        <h2>Sleep Schedule</h2>
+        <span class="section-total" style="font-size:14px;color:var(--muted)" id="sleepAvg">— hrs avg</span>
+      </div>
+      <div class="section-body">
+        <div class="schedule-grid">
+          <div class="schedule-item">
+            <label>Target Bedtime</label>
+            <input type="time" id="bedtime" value="22:30" onchange="saveAndRender()">
+          </div>
+          <div class="schedule-item">
+            <label>Target Wake Up</label>
+            <input type="time" id="wakeup" value="06:30" onchange="saveAndRender()">
+          </div>
+          <div class="schedule-item">
+            <label>Target Hours</label>
+            <input type="number" id="targetHours" value="8" min="4" max="12" step="0.5" onchange="saveAndRender()">
+          </div>
+          <div class="schedule-item">
+            <label>Avg This Month</label>
+            <input type="number" id="avgHours" placeholder="7.5" min="0" max="12" step="0.5" onchange="saveAndRender()">
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;letter-spacing:0.04em;text-transform:uppercase">Sleep Hygiene Checklist</div>
+        <div class="checklist" id="sleepChecklist"></div>
+        <button class="add-btn" onclick="addSleepHabit()">+ Add habit</button>
+        <div style="margin-top:1rem">
+          <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px">Sleep Notes</label>
+          <textarea class="notes-area" id="notesSleep" placeholder="Sleep quality, what helped, disruptions..." oninput="saveAndRender()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- OTHER EXPENSES -->
+    <div class="section" style="grid-column:1/-1">
+      <div class="section-head">
+        <div class="section-icon icon-other">📦</div>
+        <h2>Other Expenses</h2>
+        <span class="section-total" id="totalOther">₹0</span>
+      </div>
+      <div class="section-body">
+        <div id="otherEntries" style="display:grid;grid-template-columns:1fr 1fr;gap:0 1rem"></div>
+        <button class="add-btn" onclick="addEntry('other')">+ Add item</button>
+        <div style="margin-top:1rem">
+          <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px">General Notes</label>
+          <textarea class="notes-area" id="notesOther" placeholder="Savings goals, upcoming expenses..." oninput="saveAndRender()"></textarea>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end sections -->
+
+  <!-- ACTIONS -->
+  <div class="actions">
+    <button class="action-btn btn-save" onclick="saveMonth()">💾 Save Month</button>
+    <button class="action-btn btn-export" onclick="exportPDF()">📄 Export Summary</button>
+    <button class="action-btn btn-clear" onclick="clearMonth()">🗑 Clear Month</button>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history-section">
+    <div class="history-head">
+      <h2>Monthly History</h2>
+      <span style="font-size:13px;color:var(--muted)" id="historyCount"></span>
+    </div>
+    <div class="history-body" id="historyBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────
+let currentDate = new Date();
+let currentKey = () => `tracker_${currentDate.getFullYear()}_${currentDate.getMonth()}`;
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+const DEFAULT_DATA = () => ({
+  budget: '',
+  currency: '₹',
+  housing: [{name:'Rent',amount:''},{name:'Electricity',amount:''},{name:'Internet',amount:''}],
+  fitness: [{name:'Gym Membership',amount:''},{name:'Supplements',amount:''}],
+  skin: [{name:'Moisturizer',amount:''},{name:'Serum',amount:''},{name:'Sunscreen',amount:''}],
+  other: [{name:'Groceries',amount:''},{name:'Transport',amount:''}],
+  notesHousing:'', notesFitness:'', notesSkin:'', notesSleep:'', notesOther:'',
+  bedtime:'22:30', wakeup:'06:30', targetHours:'8', avgHours:'',
+  workoutDays:[{label:'Monday — Chest & Triceps',done:false},{label:'Wednesday — Back & Biceps',done:false},{label:'Friday — Legs',done:false},{label:'Sunday — Cardio / Rest',done:false}],
+  morningSteps:[{label:'Cleanser',done:false},{label:'Toner',done:false},{label:'Vitamin C Serum',done:false},{label:'Moisturizer',done:false},{label:'SPF 50 Sunscreen',done:false}],
+  eveningSteps:[{label:'Double Cleanse',done:false},{label:'Exfoliant (x3/week)',done:false},{label:'Retinol / Niacinamide',done:false},{label:'Night Cream',done:false}],
+  sleepHabits:[{label:'No screens 30 min before bed',done:false},{label:'Room temp 18–21°C',done:false},{label:'Read or meditate',done:false},{label:'Consistent wake time',done:false},{label:'No caffeine after 2pm',done:false}]
+});
+
+let data = {};
+
+// ─── INIT ─────────────────────────────────────────────
+function init(){
+  loadMonth();
+  renderMonthLabel();
+  renderAll();
+  renderHistory();
+}
+
+function loadMonth(){
+  const saved = localStorage.getItem(currentKey());
+  data = saved ? JSON.parse(saved) : DEFAULT_DATA();
+  document.getElementById('currencySelect').value = data.currency || '₹';
+  document.getElementById('totalBudget').value = data.budget || '';
+}
+
+function saveAndRender(){
+  collectFormData();
+  localStorage.setItem(currentKey(), JSON.stringify(data));
+  renderSummary();
+}
+
+function collectFormData(){
+  data.currency = document.getElementById('currencySelect').value;
+  data.budget = document.getElementById('totalBudget').value;
+  data.notesHousing = document.getElementById('notesHousing').value;
+  data.notesFitness = document.getElementById('notesFitness').value;
+  data.notesSkin = document.getElementById('notesSkin').value;
+  data.notesSleep = document.getElementById('notesSleep').value;
+  data.notesOther = document.getElementById('notesOther').value;
+  data.bedtime = document.getElementById('bedtime').value;
+  data.wakeup = document.getElementById('wakeup').value;
+  data.targetHours = document.getElementById('targetHours').value;
+  data.avgHours = document.getElementById('avgHours').value;
+  ['housing','fitness','skin','other'].forEach(cat => {
+    data[cat] = [];
+    document.querySelectorAll(`[data-cat="${cat}"]`).forEach(row => {
+      const name = row.querySelector('.entry-name').value;
+      const amount = row.querySelector('.entry-amount').value;
+      data[cat].push({name, amount});
+    });
+  });
+  ['workoutDays','morningSteps','eveningSteps','sleepHabits'].forEach(list => {
+    document.querySelectorAll(`[data-list="${list}"]`).forEach((el,i) => {
+      if(data[list][i]) data[list][i].done = el.checked;
+    });
+  });
+}
+
+function saveMonth(){
+  collectFormData();
+  localStorage.setItem(currentKey(), JSON.stringify(data));
+  renderHistory();
+  showToast('✅ Month saved successfully!');
+}
+
+function clearMonth(){
+  if(!confirm('Clear all data for this month?')) return;
+  data = DEFAULT_DATA();
+  localStorage.removeItem(currentKey());
+  renderAll();
+  showToast('🗑 Month cleared.');
+}
+
+function changeMonth(dir){
+  collectFormData();
+  localStorage.setItem(currentKey(), JSON.stringify(data));
+  currentDate.setMonth(currentDate.getMonth() + dir);
+  loadMonth();
+  renderMonthLabel();
+  renderAll();
+}
+
+// ─── RENDER ───────────────────────────────────────────
+function renderAll(){
+  renderEntries('housing');
+  renderEntries('fitness');
+  renderEntries('skin');
+  renderEntries('other');
+  renderChecklist('workoutDays','workoutChecklist');
+  renderChecklist('morningSteps','morningRoutine');
+  renderChecklist('eveningSteps','eveningRoutine');
+  renderChecklist('sleepHabits','sleepChecklist');
+  document.getElementById('notesHousing').value = data.notesHousing||'';
+  document.getElementById('notesFitness').value = data.notesFitness||'';
+  document.getElementById('notesSkin').value = data.notesSkin||'';
+  document.getElementById('notesSleep').value = data.notesSleep||'';
+  document.getElementById('notesOther').value = data.notesOther||'';
+  document.getElementById('bedtime').value = data.bedtime||'22:30';
+  document.getElementById('wakeup').value = data.wakeup||'06:30';
+  document.getElementById('targetHours').value = data.targetHours||'8';
+  document.getElementById('avgHours').value = data.avgHours||'';
+  renderSummary();
+}
+
+function renderMonthLabel(){
+  document.getElementById('monthLabel').textContent = `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+}
+
+function renderEntries(cat){
+  const container = document.getElementById(cat+'Entries');
+  container.innerHTML = '';
+  (data[cat]||[]).forEach((item,i) => {
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    row.setAttribute('data-cat', cat);
+    row.innerHTML = `<input type="text" class="entry-name" placeholder="Item name" value="${escHtml(item.name)}" oninput="saveAndRender()"><input type="number" class="entry-amount" placeholder="0" value="${item.amount||''}" min="0" oninput="saveAndRender()"><button class="del-btn" onclick="removeEntry('${cat}',${i})" title="Remove">×</button>`;
+    container.appendChild(row);
+  });
+}
+
+function renderChecklist(listKey, containerId){
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  (data[listKey]||[]).forEach((item,i) => {
+    const row = document.createElement('label');
+    row.className = 'check-row' + (item.done?' checked':'');
+    row.innerHTML = `<input type="checkbox" data-list="${listKey}" ${item.done?'checked':''} onchange="toggleCheck('${listKey}',${i},this)"><span>${escHtml(item.label)}</span><button style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;margin-left:auto;padding:0 4px" onclick="removeListItem('${listKey}',${i},event)">×</button>`;
+    container.appendChild(row);
+  });
+}
+
+function renderSummary(){
+  const cur = data.currency || '₹';
+  const sum = cat => (data[cat]||[]).reduce((a,b) => a + (parseFloat(b.amount)||0), 0);
+  const h = sum('housing'), f = sum('fitness'), s = sum('skin'), o = sum('other');
+  const total = h + f + s + o;
+  const budget = parseFloat(data.budget)||0;
+  const pct = v => budget ? Math.min(100, Math.round(v/budget*100)) : 0;
+  const fmt = v => cur + v.toLocaleString('en-IN');
+
+  document.getElementById('sumTotal').textContent = fmt(total);
+  document.getElementById('sumHousing').textContent = fmt(h);
+  document.getElementById('sumFitness').textContent = fmt(f);
+  document.getElementById('sumSkin').textContent = fmt(s);
+  document.getElementById('sumOther').textContent = fmt(o);
+  document.getElementById('totalHousing').textContent = fmt(h);
+  document.getElementById('totalFitness').textContent = fmt(f);
+  document.getElementById('totalSkin').textContent = fmt(s);
+  document.getElementById('totalOther').textContent = fmt(o);
+
+  if(budget){
+    const left = budget - total;
+    document.getElementById('sumBudgetLeft').textContent = left>=0 ? `${fmt(left)} left of ${fmt(budget)}` : `${fmt(-left)} over budget!`;
+    document.getElementById('sumTotal').className = 'sum-value' + (left<0?' over':'');
+  } else {
+    document.getElementById('sumBudgetLeft').textContent = 'Set a budget above';
+    document.getElementById('sumTotal').className = 'sum-value';
+  }
+
+  document.getElementById('progTotal').style.width = pct(total)+'%';
+  document.getElementById('progHousing').style.width = pct(h)+'%';
+  document.getElementById('progFitness').style.width = pct(f)+'%';
+  document.getElementById('progSkin').style.width = pct(s)+'%';
+  document.getElementById('progOther').style.width = pct(o)+'%';
+
+  const avg = parseFloat(data.avgHours);
+  document.getElementById('sleepAvg').textContent = avg ? `${avg} hrs avg` : '— hrs avg';
+}
+
+function renderHistory(){
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('tracker_')).sort().reverse();
+  document.getElementById('historyCount').textContent = `${keys.length} month${keys.length!==1?'s':''} saved`;
+  const body = document.getElementById('historyBody');
+  if(!keys.length){ body.innerHTML = '<div class="history-empty">No months saved yet. Fill in your data and click Save Month.</div>'; return; }
+  body.innerHTML = '';
+  keys.forEach(k => {
+    const d = JSON.parse(localStorage.getItem(k));
+    const parts = k.split('_');
+    const yr = parts[1], mo = parseInt(parts[2]);
+    const cur = d.currency||'₹';
+    const sum = cat => (d[cat]||[]).reduce((a,b) => a+(parseFloat(b.amount)||0),0);
+    const total = sum('housing')+sum('fitness')+sum('skin')+sum('other');
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `<div><div class="history-month">${MONTHS[mo]} ${yr}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">Housing ${cur}${sum('housing').toLocaleString()} · Fitness ${cur}${sum('fitness').toLocaleString()} · Skincare ${cur}${sum('skin').toLocaleString()}</div></div><div class="history-amount">${cur}${total.toLocaleString()}</div>`;
+    div.onclick = () => loadHistoryMonth(k);
+    body.appendChild(div);
+  });
+}
+
+function loadHistoryMonth(key){
+  const parts = key.split('_');
+  currentDate = new Date(parseInt(parts[1]), parseInt(parts[2]), 1);
+  loadMonth();
+  renderMonthLabel();
+  renderAll();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ─── MUTATIONS ────────────────────────────────────────
+function addEntry(cat){
+  collectFormData();
+  data[cat].push({name:'',amount:''});
+  renderEntries(cat);
+}
+
+function removeEntry(cat,i){
+  collectFormData();
+  data[cat].splice(i,1);
+  localStorage.setItem(currentKey(), JSON.stringify(data));
+  renderEntries(cat);
+  renderSummary();
+}
+
+function addWorkoutDay(){
+  collectFormData();
+  data.workoutDays.push({label:'New workout',done:false});
+  renderChecklist('workoutDays','workoutChecklist');
+  saveAndRender();
+}
+
+function addRoutineStep(time){
+  collectFormData();
+  const list = time==='morning'?'morningSteps':'eveningSteps';
+  const id = time==='morning'?'morningRoutine':'eveningRoutine';
+  data[list].push({label:'New step',done:false});
+  renderChecklist(list,id);
+  saveAndRender();
+}
+
+function addSleepHabit(){
+  collectFormData();
+  data.sleepHabits.push({label:'New habit',done:false});
+  renderChecklist('sleepHabits','sleepChecklist');
+  saveAndRender();
+}
+
+function toggleCheck(listKey,i,el){
+  collectFormData();
+  data[listKey][i].done = el.checked;
+  el.closest('.check-row').className = 'check-row'+(el.checked?' checked':'');
+  saveAndRender();
+}
+
+function removeListItem(listKey,i,e){
+  e.preventDefault(); e.stopPropagation();
+  collectFormData();
+  data[listKey].splice(i,1);
+  const idMap = {workoutDays:'workoutChecklist',morningSteps:'morningRoutine',eveningSteps:'eveningRoutine',sleepHabits:'sleepChecklist'};
+  renderChecklist(listKey, idMap[listKey]);
+  saveAndRender();
+}
+
+// ─── EXPORT ───────────────────────────────────────────
+function exportPDF(){
+  collectFormData();
+  const cur = data.currency||'₹';
+  const sum = cat => (data[cat]||[]).reduce((a,b) => a+(parseFloat(b.amount)||0),0);
+  const h=sum('housing'),f=sum('fitness'),s=sum('skin'),o=sum('other'),total=h+f+s+o;
+  const mo = `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+
+  const rows = cat => (data[cat]||[]).filter(x=>x.name||x.amount).map(x=>`<tr><td style="padding:6px 12px;border-bottom:1px solid #eee">${escHtml(x.name||'—')}</td><td style="padding:6px 12px;border-bottom:1px solid #eee;text-align:right">${cur}${(parseFloat(x.amount)||0).toLocaleString()}</td></tr>`).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${mo} Summary</title><style>body{font-family:Georgia,serif;max-width:700px;margin:2rem auto;color:#1a1714;padding:0 2rem}h1{font-size:32px;border-bottom:2px solid #c8873a;padding-bottom:1rem;margin-bottom:1.5rem}h2{font-size:20px;margin:1.5rem 0 0.5rem;color:#c8873a}table{width:100%;border-collapse:collapse;font-size:14px}th{text-align:left;padding:8px 12px;background:#f3f0eb;font-size:12px;letter-spacing:0.08em;text-transform:uppercase}.total-row td{font-weight:bold;padding:10px 12px;background:#faf8f5;border-top:2px solid #c8873a}.notes{font-size:13px;color:#8a8278;margin-top:6px;font-style:italic}@media print{body{margin:0}}</style></head><body><h1>${mo} — Expense Summary</h1><h2>Housing & Bills — ${cur}${h.toLocaleString()}</h2><table><tr><th>Item</th><th style="text-align:right">Amount</th></tr>${rows('housing')}</table>${data.notesHousing?`<p class="notes">${escHtml(data.notesHousing)}</p>`:''}<h2>Gym & Fitness — ${cur}${f.toLocaleString()}</h2><table><tr><th>Item</th><th style="text-align:right">Amount</th></tr>${rows('fitness')}</table>${data.notesFitness?`<p class="notes">${escHtml(data.notesFitness)}</p>`:''}<h2>Skincare & Beauty — ${cur}${s.toLocaleString()}</h2><table><tr><th>Item</th><th style="text-align:right">Amount</th></tr>${rows('skin')}</table>${data.notesSkin?`<p class="notes">${escHtml(data.notesSkin)}</p>`:''}<h2>Other Expenses — ${cur}${o.toLocaleString()}</h2><table><tr><th>Item</th><th style="text-align:right">Amount</th></tr>${rows('other')}</table>${data.notesOther?`<p class="notes">${escHtml(data.notesOther)}</p>`:''}<h2 style="color:#1a1714;margin-top:2rem">Total</h2><table><tr class="total-row"><td>Grand Total</td><td style="text-align:right">${cur}${total.toLocaleString()}</td></tr>${data.budget?`<tr class="total-row"><td>Budget</td><td style="text-align:right">${cur}${parseFloat(data.budget).toLocaleString()}</td></tr><tr class="total-row"><td>${total<=parseFloat(data.budget)?'Savings':'Over Budget'}</td><td style="text-align:right;color:${total<=parseFloat(data.budget)?'green':'red'}">${cur}${Math.abs(parseFloat(data.budget)-total).toLocaleString()}</td></tr>`:''}</table><h2>Sleep</h2><p style="font-size:14px">Bedtime: ${data.bedtime} · Wake: ${data.wakeup} · Target: ${data.targetHours}h · Avg this month: ${data.avgHours||'—'}h</p>${data.notesSleep?`<p class="notes">${escHtml(data.notesSleep)}</p>`:''}<p style="font-size:12px;color:#aaa;margin-top:3rem;border-top:1px solid #eee;padding-top:1rem">Generated by Monthly Life Tracker · ${new Date().toLocaleDateString()}</p></body></html>`;
+
+  const win = window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 500);
+}
+
+// ─── UTILS ────────────────────────────────────────────
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+init();
+</script>
+</body>
+</html>
